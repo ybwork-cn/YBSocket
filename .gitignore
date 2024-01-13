@@ -1,0 +1,5 @@
+.svn/
+.editorconfig
+.vs/
+**/bin/
+**/obj/
