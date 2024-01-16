@@ -51,7 +51,10 @@ namespace ybwork.YBSocket.Client
 
             //string clientIP = socket.RemoteEndPoint.ToString();
 
+            if (!socket.Connected)
+                return;
             int dataSize = socket.EndReceive(result);
+
             if (Connection.TryGetMessage(buffer, dataSize, out List<string> messages))
             {
                 foreach (var message in messages)

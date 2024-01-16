@@ -88,6 +88,7 @@ namespace ybwork.YBSocket
 
         public void Dispose()
         {
+            ClientSocket?.Close();
             ClientSocket?.Dispose();
             memoryStream.Dispose();
         }

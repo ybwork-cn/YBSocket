@@ -100,27 +100,36 @@ namespace ybwork.YBSocket.Server
             byte[] buffer = client.Buffer;
             //string clientIP = socket.RemoteEndPoint.ToString();
 
+            bool disconnected = false;
             try
             {
                 int dataSize = socket.EndReceive(result);
-                if (client.TryGetMessage(buffer, dataSize, out List<string> messages))
+                // 返回数据大小为0，视作客户端已关闭连接
+                if (dataSize != 0)
                 {
-                    foreach (string message in messages)
+                    if (client.TryGetMessage(buffer, dataSize, out List<string> messages))
                     {
-                        WebMessage webMessage = JsonConvert.DeserializeObject<WebMessage>(message);
-                        Invoke(client, webMessage);
+                        foreach (string message in messages)
+                        {
+                            WebMessage webMessage = JsonConvert.DeserializeObject<WebMessage>(message);
+                            Invoke(client, webMessage);
+                        }
                     }
+                    //接收下一条消息
+                    socket.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, Receive, client);
                 }
-                //接收下一条消息
-                socket.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, Receive, client);
+                else
+                    disconnected = true;
             }
             catch (SocketException)
             {
-                if (!socket.Connected)
-                {
-                    Clients.Remove(client);
-                    Groups.Remove(client.ClinetId);
-                }
+                disconnected = true;
+            }
+
+            if (disconnected)
+            {
+                Clients.Remove(client);
+                Groups.Remove(client.ClinetId);
             }
         }
 
