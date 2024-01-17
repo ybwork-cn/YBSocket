@@ -31,18 +31,18 @@ namespace ybwork.YBSocket.Client
             Functions.Add(function, serverAction);
         }
 
-        internal void Invoke(string function, JArray parasJObject)
+        internal void Invoke(WebMessage webMessage)
         {
-            if (!Functions.TryGetValue(function, out ConnectionAction connectionAction))
+            if (!Functions.TryGetValue(webMessage.Function, out ConnectionAction connectionAction))
                 return;
 
-            if (connectionAction.ParaTypes.Length != parasJObject.Count)
+            if (connectionAction.ParaTypes.Length != webMessage.Params.Count)
                 return;
 
             List<object> paras = new List<object>();
-            for (int i = 0; i < parasJObject.Count; i++)
+            for (int i = 0; i < webMessage.Params.Count; i++)
             {
-                paras.Add(parasJObject[i].ToObject(connectionAction.ParaTypes[i]));
+                paras.Add(webMessage.Params[i].ToObject(connectionAction.ParaTypes[i]));
             }
             connectionAction.Action.DynamicInvoke(paras.ToArray());
         }

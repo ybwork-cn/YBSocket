@@ -12,9 +12,12 @@ namespace ybwork.YBSocket.Client
         readonly ConnectionClient Connection;
         readonly IPEndPoint IPEndPoint;
 
-        public readonly WebActionHub Hub = new();
+        public readonly bool IsAutoInvoke;
 
-        public WebClient(string website, int port)
+        public readonly WebActionHub Hub = new();
+        private readonly Queue<WebMessage> MessageQueue = new();
+
+        public WebClient(string website, int port, bool isAutoInvoke)
         {
             Regex regex = new(@"^((25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))\.){3}(25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))$");
             if (regex.IsMatch(website))
@@ -29,6 +32,7 @@ namespace ybwork.YBSocket.Client
 
             Socket s = new(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             Connection = new ConnectionClient(s);
+            IsAutoInvoke = isAutoInvoke;
         }
 
         public void Connect()
@@ -60,7 +64,10 @@ namespace ybwork.YBSocket.Client
                 foreach (var message in messages)
                 {
                     WebMessage webMessage = JsonConvert.DeserializeObject<WebMessage>(message);
-                    Hub.Invoke(webMessage.Function, webMessage.Params);
+                    if (IsAutoInvoke)
+                        Hub.Invoke(webMessage);
+                    else
+                        MessageQueue.Enqueue(webMessage);
                 }
             }
             //接收下一条消息
@@ -70,6 +77,15 @@ namespace ybwork.YBSocket.Client
         public void Send(string function, params object[] args)
         {
             Connection.Send(function, args);
+        }
+
+        public void InvokeAllMessages()
+        {
+            while (MessageQueue.Count > 0)
+            {
+                WebMessage webMessage = MessageQueue.Dequeue();
+                Hub.Invoke(webMessage);
+            }
         }
 
         public void Dispose()

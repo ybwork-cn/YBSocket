@@ -8,7 +8,7 @@ namespace ConsoleApp1
     {
         static void Main()
         {
-            WebClient webClient = new WebClient("127.0.0.1", 12366);
+            WebClient webClient = new WebClient("127.0.0.1", 12366, true);
             webClient.Hub.On<string, int>("Func1", Func1);
             webClient.Connect();
             webClient.Send("UserHub/Join", "aaa");
